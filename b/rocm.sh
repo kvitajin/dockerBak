@@ -89,6 +89,7 @@ apt-get update && apt-get install -y --no-install-recommends \
   python3-future \
   python3-yaml \
   python3-pip \
+  python3-setuptools \
   vim \
   libssl-dev \
   libboost-dev \
@@ -145,7 +146,7 @@ export HCC_AMDGPU_TARGET=$GFX
 echo "$prf" >>~/.profile
 source ~/.profile
 
-pip3 install cython pillow h5py numpy scipy requests sklearn matplotlib editdistance pandas portpicker jupyter setuptools pyyaml typing enum34 hypothesis
+pip3 install cython pillow h5py numpy scipy requests sklearn matplotlib editdistance pandas portpicker jupyter pyyaml typing enum34 hypothesis
 
 update-alternatives --install /usr/bin/gcc gcc /usr/bin/clang-7 50
 update-alternatives --install /usr/bin/g++ g++ /usr/bin/clang++-7 50
