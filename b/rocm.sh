@@ -1,5 +1,8 @@
-#!/bin/bash 
-apt update
+#!/usr/bin/env bash
+set -o xtrace
+
+export DEBIAN_FRONTEND="noninteractive"
+
 if [ "$(uname)" == 'Darwin' ]; then
   OS='MacOSX'
   echo "Your platform ( $OS ) is not supported."
@@ -7,7 +10,7 @@ if [ "$(uname)" == 'Darwin' ]; then
 elif [ "$(expr substr $(uname -s) 1 5)" == 'Linux' ]; then
   OS='Linux'
   echo "Detected Linux OS."
-elif [ "$(expr substr $(uname -s) 1 10)" == 'MINGW32_NT' ]; then                                                                                           
+elif [ "$(expr substr $(uname -s) 1 10)" == 'MINGW32_NT' ]; then
   OS='Cygwin'
   echo "Your platform ( $OS ) is not supported."
   exit 1
@@ -16,49 +19,51 @@ else
   exit 1
 fi
 
-
-
 IS_AVAILABLE_OS="NO"
 
-OSSTR=`cat /etc/os-release | grep "Ubuntu 16.04"`
+OSSTR=$(cat /etc/os-release | grep "Ubuntu 16.04")
 echo "Check OS ${OSSTR}"
 if [ ${#OSSTR} == 0 ]; then
-echo "None"
+  echo "None"
 else
-IS_AVAILABLE_OS="Ubuntu 16.04"
+  IS_AVAILABLE_OS="Ubuntu 16.04"
 fi
 
-OSSTR=`cat /etc/os-release | grep "Ubuntu 18.04"`
+OSSTR=$(cat /etc/os-release | grep "Ubuntu 18.04")
 echo "Check OS ${OSSTR}"
 if [ ${#OSSTR} == 0 ]; then
-echo "None"
+  echo "None"
 else
-IS_AVAILABLE_OS="Ubuntu 18.04"
-
-if cat /etc/apt/sources.list | grep 'bionic main universe' >/dev/null; then
-    echo "System already has bionic main universe repository"
-else
-    #sudo sh -c "echo '' > /etc/apt/sources.list"
-    sh -c "echo 'deb http://archive.ubuntu.com/ubuntu bionic main universe' >> /etc/apt/sources.list"
-    sh -c "echo 'deb http://archive.ubuntu.com/ubuntu bionic-security main universe' >> /etc/apt/sources.list"
-    sh -c "echo 'deb http://archive.ubuntu.com/ubuntu bionic-updates main universe' >> /etc/apt/sources.list"
-    apt update
+  IS_AVAILABLE_OS="Ubuntu 18.04"
 fi
 
-
+if [ "$IS_AVAILABLE_OS" = "NO" ]; then
+  echo "System must be Ubuntu 16.04 or Ubuntu 18.04"
+  exit 1
 fi
 
-if test "$IS_AVAILABLE_OS" != "NO" ; then
-
-
-
-
-apt-get update && apt-get install -y --no-install-recommends curl && \
+if [ "$IS_AVAILABLE_OS" = "Ubuntu 18.04" ]; then
+  apt-get update && apt-get install -y --no-install-recommends curl gnupg2 software-properties-common && \
+  add-apt-repository universe && \
   curl -sL http://repo.radeon.com/rocm/apt/debian/rocm.gpg.key | apt-key add - && \
-  sh -c 'echo deb [arch=amd64] http://repo.radeon.com/rocm/apt/debian/ xenial main > /etc/apt/sources.list.d/rocm.list' \
-  
-  
-apt-get update &&  apt-get install -y --no-install-recommends \
+  sh -c 'echo deb [arch=amd64] http://repo.radeon.com/rocm/apt/debian/ xenial main > /etc/apt/sources.list.d/rocm.list' && \
+  curl -sL https://apt.llvm.org/llvm-snapshot.gpg.key | apt-key add - && \
+  sh -c 'echo deb [arch=amd64] http://apt.llvm.org/bionic/ llvm-toolchain-bionic-7 main > /etc/apt/sources.list.d/llvm7.list' && \
+  sh -c 'echo deb-src http://apt.llvm.org/bionic/ llvm-toolchain-bionic-7 main >> /etc/apt/sources.list.d/llvm7.list'
+elif [ "$IS_AVAILABLE_OS" = "Ubuntu 16.04" ]; then
+  apt-get update && apt-get install -y --no-install-recommends curl gnupg2 software-properties-common && \
+  add-apt-repository universe && \
+  curl -sL http://repo.radeon.com/rocm/apt/debian/rocm.gpg.key | apt-key add - && \
+  sh -c 'echo deb [arch=amd64] http://repo.radeon.com/rocm/apt/debian/ xenial main > /etc/apt/sources.list.d/rocm.list' && \
+  curl -sL https://apt.llvm.org/llvm-snapshot.gpg.key | apt-key add - && \
+  sh -c 'echo deb [arch=amd64] http://apt.llvm.org/xenial/ llvm-toolchain-xenial-7 main > /etc/apt/sources.list.d/llvm7.list' && \
+  sh -c 'echo deb-src http://apt.llvm.org/xenial/ llvm-toolchain-xenial-7 main >> /etc/apt/sources.list.d/llvm7.list'
+else
+  echo "System must be Ubuntu 16.04 or Ubuntu 18.04"
+  exit 1
+fi
+
+apt-get update && apt-get install -y --no-install-recommends \
   libelf1 \
   build-essential \
   bzip2 \
@@ -80,7 +85,6 @@ apt-get update &&  apt-get install -y --no-install-recommends \
   make \
   miopen-hip \
   miopengemm \
-  python3.6 \
   python3-dev \
   python3-future \
   python3-yaml \
@@ -101,25 +105,19 @@ apt-get update &&  apt-get install -y --no-install-recommends \
   rocblas \
   rocfft \
   hipsparse \
-  hip-thrust \
   rccl \
-  
-curl -sL https://apt.llvm.org/llvm-snapshot.gpg.key | apt-key add - && \
-sh -c 'echo deb [arch=amd64] http://apt.llvm.org/xenial/ llvm-toolchain-xenial-7 main > /etc/apt/sources.list.d/llvm7.list' && \
-sh -c 'echo deb-src http://apt.llvm.org/xenial/ llvm-toolchain-xenial-7 main >> /etc/apt/sources.list.d/llvm7.list'\
+  clang-7
 
-apt-get update && apt-get install -y --no-install-recommends clang-7
-
-apt-get clean && \
-rm -rf /var/lib/apt/lists/*
+apt-get clean &&
+  rm -rf /var/lib/apt/lists/*
 
 sed -i 's/find_dependency(hip)/find_dependency(HIP)/g' /opt/rocm/rocsparse/lib/cmake/rocsparse/rocsparse-config.cmake
 sed -i 's/find_dependency(hip)/find_dependency(HIP)/g' /opt/rocm/rocfft/lib/cmake/rocfft/rocfft-config.cmake
 sed -i 's/find_dependency(hip)/find_dependency(HIP)/g' /opt/rocm/miopen/lib/cmake/miopen/miopen-config.cmake
 sed -i 's/find_dependency(hip)/find_dependency(HIP)/g' /opt/rocm/rocblas/lib/cmake/rocblas/rocblas-config.cmake
 
-
-prf=`cat <<'EOF'
+prf=$(
+  cat <<'EOF'
 export HIP_VISIBLE_DEVICES=0
 export HCC_HOME=/opt/rocm/hcc
 export ROCM_PATH=/opt/rocm
@@ -139,39 +137,15 @@ export PLATFORM=hcc
 export USE_ROCM=1
 export MAX_JOBS=2
 EOF
-`
+)
 
-GFX=gfx601
-echo "Select a GPU type."
-#select INS in RX500Series\(RX550/RX560/RX570/RX580/RX590\) Vega10Series\(Vega56/64/WX9100/FE/MI25\) Vega20Series\(RadeonVII/MI50/MI60\) Default
-#do
-#case $INS in
-#Patch)
-#PATCH;
-#break;;
-#RX500Series\(RX550/RX560/RX570/RX580/RX590\))
-#GFX=gfx806
-#break;;
-#Vega10Series\(Vega56/64/WX9100/FE/MI25\))
-#GFX=gfx900
-#break;;
-#Vega20Series\(RadeonVII/MI50/MI60\))
-#GFX=gfx906
-#break;;
-#Default)
-#break;;
-#*) echo "ERROR: Invalid selection"
-#;;
-#esac
-#done
+GFX=gfx900
 export HCC_AMDGPU_TARGET=$GFX
 
-
-echo "$prf" >> ~/.profile
+echo "$prf" >>~/.profile
 source ~/.profile
 
 pip3 install cython pillow h5py numpy scipy requests sklearn matplotlib editdistance pandas portpicker jupyter setuptools pyyaml typing enum34 hypothesis
-
 
 update-alternatives --install /usr/bin/gcc gcc /usr/bin/clang-7 50
 update-alternatives --install /usr/bin/g++ g++ /usr/bin/clang++-7 50
@@ -193,8 +167,3 @@ pip3 install torchvision
 cd ~/
 clinfo | grep '  Name:'
 python3 -c "import torch;print('CUDA(hip) is available',torch.cuda.is_available());print('cuda(hip)_device_num:',torch.cuda.device_count());print('Radeon device:',torch.cuda.get_device_name(torch.cuda.current_device()))"
-
-
-else
-        echo "System must be Ubuntu16.04 or Ubuntu18.04"
-fi
