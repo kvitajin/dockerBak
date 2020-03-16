@@ -41,17 +41,3 @@ pip3 install cython pillow h5py numpy scipy requests sklearn matplotlib editdist
 
 update-alternatives --install /usr/bin/gcc gcc /usr/bin/clang-7 50
 update-alternatives --install /usr/bin/g++ g++ /usr/bin/clang++-7 50
-
-# git clone https://github.com/pytorch/pytorch.git
-git clone https://github.com/ROCmSoftwarePlatform/pytorch.git pytorch-rocm
-cd pytorch-rocm
-git checkout 5d6e0907684c6f508c471505b5eee943bbf2dfde # 1.1.0a0+e6991ed
-git submodule update --init --recursive
-
-#python3 tools/amd_build/build_pytorch_amd.py
-#python3 tools/amd_build/build_caffe2_amd.py
-python3 tools/amd_build/build_amd.py
-
-python3 setup.py install
-pip3 install torchvision
-

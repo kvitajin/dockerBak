@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 
-cd ~/
-clinfo | grep '  Name:'
-#python3 -c "import torch;print('CUDA(hip) is available',torch.cuda.is_available());print('cuda(hip)_device_num:',torch.cuda.device_count());print('Radeon device:',torch.cuda.get_device_name(torch.cuda.current_device()))"
- 
+# git clone https://github.com/pytorch/pytorch.git
+git clone https://github.com/ROCmSoftwarePlatform/pytorch.git pytorch-rocm
+cd pytorch-rocm
+git checkout 5d6e0907684c6f508c471505b5eee943bbf2dfde # 1.1.0a0+e6991ed
+git submodule update --init --recursive
