@@ -11,7 +11,12 @@ RUN apt-get update && apt-get install -y \
     curl  \
     apt-utils
 COPY rocm.sh rocm.sh
+COPY rocm2.sh rocm2.sh
+COPY rocm3.sh rocm3.sh
+
 RUN chmod +x rocm.sh && ./rocm.sh
+RUN chmod +x rocm2.sh && ./rocm2.sh
+RUN chmod +x rocm3.sh && ./rocm3.sh
 
 
 
